@@ -34,6 +34,9 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install OpenSSL dev headers
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
       - name: Run tests
         run: cargo test --all-features
 
@@ -41,7 +44,7 @@ jobs:
         run: cargo clippy
 
   # ─────────────────────────────────────────────
-  # 2. Build binaries for all platforms
+  # 2. Build binaries — 4 platforms (no ARM64 cross)
   # ─────────────────────────────────────────────
   build:
     name: Build — ${{ matrix.target }}
@@ -55,31 +58,21 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact_name: max-linux-x86_64
-            use_cross: false
 
-          # Linux ARM64
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            artifact_name: max-linux-arm64
-            use_cross: true
-
-          # macOS x86_64 (Intel)
+          # macOS Intel
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: max-macos-x86_64
-            use_cross: false
 
-          # macOS ARM64 (Apple Silicon)
+          # macOS Apple Silicon
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact_name: max-macos-arm64
-            use_cross: false
 
           # Windows x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: max-windows-x86_64
-            use_cross: false
 
     steps:
       - uses: actions/checkout@v4
@@ -98,19 +91,13 @@ jobs:
             target
           key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install cross (if needed)
-        if: matrix.use_cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Install OpenSSL (Linux only)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
 
-      - name: Build release binary (cargo)
-        if: "!matrix.use_cross"
+      - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Build release binary (cross)
-        if: matrix.use_cross
-        run: cross build --release --target ${{ matrix.target }}
-
-      # Package binary
       - name: Package binary (Unix)
         if: runner.os != 'Windows'
         run: |
@@ -174,7 +161,6 @@ jobs:
             ```
 
             #### Manual Binary Download
-            Download the binary for your platform below and run:
 
             **Linux / macOS:**
             ```bash
@@ -184,8 +170,7 @@ jobs:
             max --version
             ```
 
-            **Windows:**
-            Extract the `.zip` and add to PATH.
+            **Windows:** Extract the `.zip` and add to PATH.
 
             ### Links
             - GitHub: https://github.com/ememzyvisuals/max
@@ -217,10 +202,10 @@ jobs:
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json'));
-            pkg.version = '$VERSION';
+            pkg.version = '\$VERSION';
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
-          echo "Version synced to $VERSION"
+          echo "Version synced to \$VERSION"
 
       - name: Publish npm package
         run: |
