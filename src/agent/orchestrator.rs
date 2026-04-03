@@ -37,14 +37,15 @@ pub async fn ultraplan(task: String, num_agents: u8, config: &MaxConfig) -> Resu
 
     let router = ModelRouter::new(config);
 
+    let json_example = r#"[{"id": 1, "role": "<role name>", "objective": "<specific objective>"}, ...]"#;
     let decompose_prompt = format!(
         "You are ULTRAPLAN, an expert task decomposition AI.\n\
          Break this task into exactly {} parallel sub-tasks for specialist agents.\n\
          Format your response as a JSON array:\n\
-         [{\"id\": 1, \"role\": \"<role name>\", \"objective\": \"<specific objective>\"}, ...]\n\
+         {}\n\
          Respond ONLY with the JSON array, no other text.\n\
          Task: {}",
-        num_agents, task
+        num_agents, json_example, task
     );
 
     let decompose_result = router.complete(&decompose_prompt, config).await?;
