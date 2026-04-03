@@ -1,0 +1,30 @@
+# Rust
+/target
+Cargo.lock
+
+# npm
+npm-package/node_modules/
+npm-package/.bin/
+npm-package/.bin
+
+# Environment
+.env
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# MAX runtime data (user-specific)
+~/.max/
+
+# Build artifacts
+dist/
+artifacts/
+*.tar.gz
+*.zip

@@ -1,0 +1,90 @@
+[package]
+name = "max"
+version = "1.0.0"
+edition = "2021"
+authors = ["Emmanuel Ariyo <Ememzyvisuals@gmail.com>"]
+description = "MAX — Production-Ready High-End CLI AI Agent by Ememzyvisuals"
+repository = "https://github.com/ememzyvisuals/max"
+license = "MIT"
+keywords = ["ai", "cli", "agent", "llm", "offline"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "max"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+
+# CLI
+clap = { version = "4.4", features = ["derive", "env"] }
+
+# Terminal UI
+crossterm = "0.27"
+ratatui = "0.24"
+
+# HTTP client for API calls
+reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+
+# Database
+rusqlite = { version = "0.31", features = ["bundled"] }
+sled = "0.34"
+
+# Embedding / vector ops
+ndarray = "0.15"
+
+# Async traits
+async-trait = "0.1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Random / UUID
+uuid = { version = "1.6", features = ["v4"] }
+rand = "0.8"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Config
+config = "0.13"
+dirs = "5.0"
+
+# Colors in terminal
+colored = "2.1"
+
+# Spinners / progress
+indicatif = "0.17"
+
+# Syntax highlighting
+syntect = "5.1"
+
+# TOML/YAML parsing
+serde_yaml = "0.9"
+
+# Fuzzy matching (for command suggestions)
+fuzzy-matcher = "0.3"
+
+# Shell execution
+which = "6.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true

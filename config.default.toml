@@ -1,0 +1,104 @@
+# MAX Configuration
+# Created by Ememzyvisuals (Emmanuel Ariyo)
+# Edit this file or use: max config set <key> <value>
+# Location: ~/.max/config.toml
+
+[meta]
+version = "1.0.0"
+author = "Ememzyvisuals (Emmanuel Ariyo)"
+
+# ─────────────────────────────────────────────
+# Model Configuration
+# ─────────────────────────────────────────────
+[model]
+# Active model. Prefix determines the provider:
+#   groq/<model>       — Groq Cloud (fast inference)
+#   openai/<model>     — OpenAI API
+#   anthropic/<model>  — Anthropic API
+#   ollama/<model>     — Local Ollama (offline)
+active = "groq/llama3-70b-8192"
+
+# Directory for offline model weights (Ollama managed)
+offline_path = "~/.max/models/"
+
+# Fallback to API if offline model fails
+fallback_to_api = true
+
+# Generation parameters
+temperature = 0.7
+max_tokens = 2048
+
+# ─────────────────────────────────────────────
+# UI / Terminal
+# ─────────────────────────────────────────────
+[ui]
+# Animation speed: slow | normal | fast | off
+animation_speed = "normal"
+
+# Color theme: dark | light | neon | minimal
+color_theme = "dark"
+
+# Show splash screen on startup
+splash_enabled = true
+
+# Spinner style: dots | line | arc | bounce
+spinner_style = "dots"
+
+# ─────────────────────────────────────────────
+# Memory
+# ─────────────────────────────────────────────
+[memory]
+# Enable persistent memory across sessions
+enabled = true
+
+# Number of past exchanges to store and recall
+depth = 50
+
+# Enable embedding-based semantic search (experimental)
+embeddings = false
+
+# SQLite database path
+db_path = "~/.max/memory.db"
+
+# ─────────────────────────────────────────────
+# /buddy Companion
+# ─────────────────────────────────────────────
+[buddy]
+# Enable the /buddy AI pet companion
+enabled = true
+
+# Your buddy's name
+name = "CHIP"
+
+# Personality: curious | sarcastic | wise | hyper | calm
+personality = "curious"
+
+# Starting evolution stage (1–5)
+evolution_stage = 1
+
+# ─────────────────────────────────────────────
+# API Keys (or set via environment variables)
+# ─────────────────────────────────────────────
+# PREFERRED: use environment variables instead of storing keys here:
+#   export GROQ_API_KEY=your_key
+#   export OPENAI_API_KEY=your_key
+#   export ANTHROPIC_API_KEY=your_key
+
+[api]
+groq_key = ""        # or set GROQ_API_KEY env var
+openai_key = ""      # or set OPENAI_API_KEY env var
+anthropic_key = ""   # or set ANTHROPIC_API_KEY env var
+preferred_api = "groq"
+
+# ─────────────────────────────────────────────
+# Tools / Sandbox
+# ─────────────────────────────────────────────
+[tools]
+# Enable the code execution sandbox
+sandbox_enabled = true
+
+# Languages allowed to run in sandbox
+allowed_languages = ["python", "javascript", "bash", "rust", "go", "ruby"]
+
+# Execution timeout in seconds
+timeout_seconds = 30

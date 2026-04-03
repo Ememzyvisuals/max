@@ -1,0 +1,39 @@
+{
+  "name": "@ememzyvisuals/max",
+  "version": "1.0.0",
+  "description": "MAX — Production CLI AI Agent by Ememzyvisuals (Emmanuel Ariyo)",
+  "author": "Ememzyvisuals (Emmanuel Ariyo) <Ememzyvisuals@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ememzyvisuals/max",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ememzyvisuals/max.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ememzyvisuals/max/issues"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "agent",
+    "llm",
+    "offline",
+    "groq",
+    "openai",
+    "terminal"
+  ],
+  "bin": {
+    "max": "./bin/max.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
