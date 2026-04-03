@@ -1,0 +1,230 @@
+name: MAX — Build, Test & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [created]
+
+env:
+  CARGO_TERM_COLOR: always
+  BINARY_NAME: max
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. Run tests on Linux
+  # ─────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run tests
+        run: cargo test --all-features
+
+      - name: Clippy lint
+        run: cargo clippy
+
+  # ─────────────────────────────────────────────
+  # 2. Build binaries for all platforms
+  # ─────────────────────────────────────────────
+  build:
+    name: Build — ${{ matrix.target }}
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: max-linux-x86_64
+            use_cross: false
+
+          # Linux ARM64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: max-linux-arm64
+            use_cross: true
+
+          # macOS x86_64 (Intel)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: max-macos-x86_64
+            use_cross: false
+
+          # macOS ARM64 (Apple Silicon)
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: max-macos-arm64
+            use_cross: false
+
+          # Windows x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: max-windows-x86_64
+            use_cross: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cross (if needed)
+        if: matrix.use_cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build release binary (cargo)
+        if: "!matrix.use_cross"
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build release binary (cross)
+        if: matrix.use_cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      # Package binary
+      - name: Package binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/${{ env.BINARY_NAME }} dist/${{ matrix.artifact_name }}
+          chmod +x dist/${{ matrix.artifact_name }}
+          tar -czf dist/${{ matrix.artifact_name }}.tar.gz -C dist ${{ matrix.artifact_name }}
+
+      - name: Package binary (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item "target\${{ matrix.target }}\release\${{ env.BINARY_NAME }}.exe" "dist\${{ matrix.artifact_name }}.exe"
+          Compress-Archive -Path "dist\${{ matrix.artifact_name }}.exe" -DestinationPath "dist\${{ matrix.artifact_name }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/
+
+  # ─────────────────────────────────────────────
+  # 3. Create GitHub Release & upload binaries
+  # ─────────────────────────────────────────────
+  release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: List artifacts
+        run: find artifacts/ -type f
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+          body: |
+            ## MAX ${{ github.ref_name }}
+
+            **Production CLI AI Agent by Ememzyvisuals (Emmanuel Ariyo)**
+
+            ### Installation
+
+            #### npm (Recommended)
+            ```bash
+            npm install -g @ememzyvisuals/max
+            ```
+
+            #### Manual Binary Download
+            Download the binary for your platform below and run:
+
+            **Linux / macOS:**
+            ```bash
+            tar -xzf max-<platform>.tar.gz
+            chmod +x max-<platform>
+            sudo mv max-<platform> /usr/local/bin/max
+            max --version
+            ```
+
+            **Windows:**
+            Extract the `.zip` and add to PATH.
+
+            ### Links
+            - GitHub: https://github.com/ememzyvisuals/max
+            - X: https://x.com/ememzyvisuals
+            - Kaggle: https://kaggle.com/ememzyvisuals
+
+  # ─────────────────────────────────────────────
+  # 4. Publish to npm on release
+  # ─────────────────────────────────────────────
+  npm-publish:
+    name: Publish to npm
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Sync version from Cargo.toml
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/version = "//;s/"//')
+          cd npm-package
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json'));
+            pkg.version = '$VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "Version synced to $VERSION"
+
+      - name: Publish npm package
+        run: |
+          cd npm-package
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
