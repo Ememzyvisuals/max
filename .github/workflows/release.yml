@@ -44,7 +44,7 @@ jobs:
         run: cargo clippy
 
   # ─────────────────────────────────────────────
-  # 2. Build binaries — 4 platforms (no ARM64 cross)
+  # 2. Build binaries — 4 platforms
   # ─────────────────────────────────────────────
   build:
     name: Build — ${{ matrix.target }}
@@ -54,22 +54,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux x86_64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact_name: max-linux-x86_64
 
-          # macOS Intel
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: max-macos-x86_64
 
-          # macOS Apple Silicon
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact_name: max-macos-arm64
 
-          # Windows x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: max-windows-x86_64
@@ -195,21 +191,12 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Sync version from Cargo.toml
-        run: |
-          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/version = "//;s/"//')
-          cd npm-package
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json'));
-            pkg.version = '\$VERSION';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          echo "Version synced to \$VERSION"
-
       - name: Publish npm package
+        working-directory: npm-package
         run: |
-          cd npm-package
+          VERSION=$(grep '^version' ../Cargo.toml | head -1 | sed 's/version = "//;s/"//')
+          echo "Publishing version: $VERSION"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
